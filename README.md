@@ -1,8 +1,10 @@
-# Personal Finance Viewer
+# Personal Finance Viewer v0.0.1
 
 A local-first desktop app for understanding your personal finances. Import a PDF financial statement, review its AI-extracted transactions, track assets and insurance policies, and explore your spending over time.
 
 Built with Tauri, TypeScript, Rust, and SQLite.
+
+> DISCLAIMER: This project is not fully done yet and it will upalod your bank statement to AI to extract out the data. Please ensure you mask out the sensitive information in the statement before you upload it
 
 ## Features
 
@@ -109,4 +111,6 @@ For database format details, see [`data/README.md`](data/README.md).
 
 Add items here as you continue improving the app.
 
-- [ ]
+- [ ] Adding the layer to filter out sensitive information like credit card info before uploading to AI side
+- [ ] Create a local model that can conduct the data extraction locally
+- [ ] Support othe AI like Claude, Gemini etc
