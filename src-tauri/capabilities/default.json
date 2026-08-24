@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissions required by the main Personal Finance Viewer window.",
+  "windows": ["main"],
+  "permissions": ["core:default", "dialog:default"]
+}

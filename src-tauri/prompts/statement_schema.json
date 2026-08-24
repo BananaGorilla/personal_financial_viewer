@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "properties": {
+    "document_type": {
+      "type": "string",
+      "description": "The kind of financial statement, for example credit_card_statement or bank_statement."
+    },
+    "institution": {
+      "type": ["string", "null"],
+      "description": "The issuing financial institution."
+    },
+    "statement_month": {
+      "type": ["string", "null"],
+      "description": "Statement date in YYYY-MM form when available."
+    },
+    "summary": {
+      "type": ["object", "null"],
+      "properties": {
+        "previous_balance_cents": { "type": ["integer", "null"] },
+        "payments_and_credits_cents": { "type": ["integer", "null"] },
+        "purchases_and_advances_cents": { "type": ["integer", "null"] },
+        "interest_cents": { "type": ["integer", "null"] },
+        "fees_cents": { "type": ["integer", "null"] },
+        "current_balance_cents": { "type": ["integer", "null"] }
+      },
+      "required": [
+        "previous_balance_cents",
+        "payments_and_credits_cents",
+        "purchases_and_advances_cents",
+        "interest_cents",
+        "fees_cents",
+        "current_balance_cents"
+      ],
+      "additionalProperties": false
+    },
+    "transactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": ["string", "null"],
+            "description": "Transaction date in YYYY-MM-DD form when available."
+          },
+          "description": {
+            "type": "string",
+            "description": "The transaction description as shown on the statement."
+          },
+          "category": { 
+            "type": "string",
+            "enum": ["grocery", "utility bill", "housing", "transportation", "food", "recreation", "subscription", "misc", "loan", "allowance", "paynow", "health", "nothing"]
+          },
+          "amount_cents": {
+            "type": "integer",
+            "description": "Signed amount in the account currency's smallest unit."
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["purchase", "fee", "interest", "payment", "credit", "cash_advance", "other"]
+          }
+        },
+        "required": ["date", "description", "category", "amount_cents", "kind"],
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": [
+    "document_type",
+    "institution",
+    "statement_month",
+    "summary",
+    "transactions",
+    "warnings"
+  ],
+  "additionalProperties": false
+}

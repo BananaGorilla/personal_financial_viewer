@@ -1,0 +1,44 @@
+{
+  "document_type": "credit_card_statement",
+  "institution": "Development Test Bank",
+  "statement_month": "2026-06",
+  "summary": {
+    "previous_balance_cents": 125000,
+    "payments_and_credits_cents": -50000,
+    "purchases_and_advances_cents": 23635,
+    "interest_cents": 0,
+    "fees_cents": 0,
+    "current_balance_cents": 98635
+  },
+  "transactions": [
+    {
+      "date": "2026-06-03",
+      "description": "FRESH MARKET",
+      "category": "grocery",
+      "amount_cents": 3290,
+      "kind": "purchase"
+    },
+    {
+      "date": "2026-06-07",
+      "description": "CITY ELECTRICITY",
+      "category": "utility bill",
+      "amount_cents": 12845,
+      "kind": "purchase"
+    },
+    {
+      "date": "2026-06-12",
+      "description": "NEIGHBOURHOOD CAFE",
+      "category": "food",
+      "amount_cents": 7500,
+      "kind": "purchase"
+    },
+    {
+      "date": "2026-06-15",
+      "description": "PAYMENT RECEIVED",
+      "category": "misc",
+      "amount_cents": -50000,
+      "kind": "payment"
+    }
+  ],
+  "warnings": []
+}
