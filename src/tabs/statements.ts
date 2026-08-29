@@ -16,6 +16,13 @@ type SaveStatementResult = {
   transactionCount: number;
 };
 
+type PdfExtractionResult = {
+  statement: unknown;
+  redactedPdfPath: string;
+  redactionCount: number;
+  pageCount: number;
+};
+
 const CATEGORY_OPTIONS = [
   "grocery", "utility bill", "housing", "transportation", "food", "recreation",
   "subscription", "misc", "loan", "allowance", "paynow", "health", "nothing",
@@ -35,7 +42,7 @@ export const statementsTab: TabDefinition = {
     <section class="upload-card">
       <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" /></svg></div>
       <h2>Import a statement</h2>
-      <p>Choose a PDF or drag and drop one below. The file will be analyzed by OpenAI.</p>
+      <p>Choose a PDF or drag and drop one below. Card numbers are redacted locally before the sanitized copy is analyzed by OpenAI.</p>
       <button id="choose" class="primary-button">Choose PDF</button>
       <div id="drop-zone" class="drop-zone" role="button" tabindex="0">Drag and drop a PDF here</div>
       <p id="selected-path" class="selected-path" hidden></p>
@@ -307,8 +314,10 @@ export const statementsTab: TabDefinition = {
       chooseButton.disabled = true;
       chooseButton.textContent = "Analyzing…";
       try {
-        const extracted = await invoke<unknown>("extract_pdf_with_openai", { path, apiKey });
-        showExtractedStatement(extracted, "OpenAI structured JSON extraction", path);
+        const extracted = await invoke<PdfExtractionResult>("extract_pdf_with_openai", { path, apiKey });
+        selectedPath.textContent = `Original: ${path}\nRedacted copy: ${extracted.redactedPdfPath}`;
+        const redactionLabel = `${extracted.redactionCount} possible card number${extracted.redactionCount === 1 ? "" : "s"} redacted across ${extracted.pageCount} page${extracted.pageCount === 1 ? "" : "s"}`;
+        showExtractedStatement(extracted.statement, `OpenAI structured JSON extraction · ${redactionLabel}`, path);
       } catch (error) {
         hideCategoryTotals();
         showErrorDetails();

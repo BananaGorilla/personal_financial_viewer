@@ -1,4 +1,5 @@
 import type { TabDefinition } from "../app-types";
+import { invoke } from "@tauri-apps/api/core";
 import { queryRequired } from "../ui-utils";
 
 export const API_KEY_STORAGE_KEY = "personal-finance-viewer.ai-api-key";
@@ -41,11 +42,27 @@ export const settingsTab: TabDefinition = {
         </div>
       </form>
     </section>
+
+    <section class="settings-card danger-settings-card" aria-labelledby="data-settings-title">
+      <div class="settings-card-heading">
+        <span class="settings-icon danger-settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h18M9 6V4h6v2m-9 0 1 15h10l1-15M10 10v7m4-7v7" /></svg></span>
+        <div><h2 id="data-settings-title">Start fresh</h2><p>Permanently remove all saved finance data from this device.</p></div>
+      </div>
+      <div class="danger-settings-content">
+        <p>Imported statements, assets, loans, and insurance policies will be deleted. Your AI key will remain saved.</p>
+        <div class="form-actions">
+          <span id="clear-data-status" class="save-status" role="status" aria-live="polite"></span>
+          <button id="clear-data" class="danger-button" type="button">Clear database</button>
+        </div>
+      </div>
+    </section>
   `,
   mount(panel, context) {
     const form = queryRequired<HTMLFormElement>(panel, "#api-key-form");
     const input = queryRequired<HTMLInputElement>(panel, "#api-key");
     const status = queryRequired<HTMLSpanElement>(panel, "#save-status");
+    const clearButton = queryRequired<HTMLButtonElement>(panel, "#clear-data");
+    const clearStatus = queryRequired<HTMLSpanElement>(panel, "#clear-data-status");
 
     input.value = getStoredApiKey();
 
@@ -61,6 +78,27 @@ export const settingsTab: TabDefinition = {
         window.setTimeout(() => { status.textContent = ""; }, 2500);
       } catch {
         status.textContent = "Could not save the key";
+      }
+    });
+
+    clearButton.addEventListener("click", async () => {
+      const confirmed = window.confirm(
+        "Clear all saved finance data? This permanently deletes imported statements, assets, loans, and insurance policies."
+      );
+      if (!confirmed) return;
+
+      clearButton.disabled = true;
+      clearButton.textContent = "Clearing…";
+      clearStatus.textContent = "";
+      try {
+        await invoke("clear_all_finance_data");
+        clearStatus.textContent = "Database cleared. You can start fresh.";
+        context.events.dispatchEvent(new Event("finance-data-cleared"));
+      } catch (error) {
+        clearStatus.textContent = `Could not clear the database: ${String(error)}`;
+      } finally {
+        clearButton.disabled = false;
+        clearButton.textContent = "Clear database";
       }
     });
 

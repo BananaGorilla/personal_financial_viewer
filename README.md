@@ -22,7 +22,7 @@ Built with Tauri, TypeScript, Rust, and SQLite.
 
 Your finance database is stored locally on your device. In development, it is saved at `data/personal-finance.sqlite3`; packaged builds save it in the app's data directory.
 
-When you import a statement, the selected PDF is sent to OpenAI for extraction. The app stores your API key in local webview storage and passes it to the native app only when an extraction is requested. Uploaded files are deleted from OpenAI on a best-effort basis after processing.
+When you import a statement on macOS, the app first renders every page locally, uses Apple's on-device Vision OCR to cover possible card numbers, and creates a flattened image-only PDF beside the original. Only that redacted copy is sent to OpenAI for extraction, and it is kept locally for inspection. The app stores your API key in local webview storage and passes it to the native app only when an extraction is requested. Uploaded files are deleted from OpenAI on a best-effort basis after processing.
 
 Do not commit personal statements, API keys, or a database containing real financial data to source control.
 
@@ -111,6 +111,6 @@ For database format details, see [`data/README.md`](data/README.md).
 
 Add items here as you continue improving the app.
 
-- [ ] Adding the layer to filter out sensitive information like credit card info before uploading to AI side
+- [x] Redact possible credit/debit card numbers locally before uploading a flattened PDF to OpenAI (macOS)
 - [ ] Create a local model that can conduct the data extraction locally
 - [ ] Support othe AI like Claude, Gemini etc

@@ -102,7 +102,7 @@ export const assetsTab: TabDefinition = {
       </div>
     </div>
   `,
-  mount(panel) {
+  mount(panel, context) {
     const loading = queryRequired<HTMLElement>(panel, "#assets-loading");
     const error = queryRequired<HTMLElement>(panel, "#assets-error");
     const content = queryRequired<HTMLElement>(panel, "#assets-content");
@@ -285,6 +285,9 @@ export const assetsTab: TabDefinition = {
       }
     });
 
+    context.events.addEventListener("finance-data-cleared", () => {
+      data = null;
+    });
     invoke<AssetsData>("get_assets_data").then(render).catch(showError);
     return { onActivate: () => { if (!data) invoke<AssetsData>("get_assets_data").then(render).catch(showError); } };
   },

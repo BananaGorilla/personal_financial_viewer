@@ -1,7 +1,9 @@
 use personal_finance_viewer::classes::openai_pdf_extractor::OpenAiPdfExtractor;
+use personal_finance_viewer::classes::pdf_redactor::redact_card_numbers;
 use personal_finance_viewer::database::{
     self, AssetsData, DashboardData, InsurancePolicy, SaveStatementResult, StatementToSave,
 };
+use serde::Serialize;
 use serde_json::Value;
 use std::path::PathBuf;
 use tauri::Manager;
@@ -15,8 +17,20 @@ fn is_testing_mode() -> bool {
 }
 
 /// Tauri adapter for the reusable Rust API client.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PdfExtractionResult {
+    statement: Value,
+    redacted_pdf_path: PathBuf,
+    redaction_count: usize,
+    page_count: usize,
+}
+
 #[tauri::command]
-async fn extract_pdf_with_openai(path: String, api_key: String) -> Result<Value, String> {
+async fn extract_pdf_with_openai(
+    path: String,
+    api_key: String,
+) -> Result<PdfExtractionResult, String> {
     let schema = serde_json::from_str(EXTRACTION_SCHEMA)
         .map_err(|error| format!("The statement JSON Schema is invalid: {error}"))?;
     let extractor = OpenAiPdfExtractor::new(
@@ -27,7 +41,19 @@ async fn extract_pdf_with_openai(path: String, api_key: String) -> Result<Value,
         schema,
     )?;
 
-    extractor.extract(path).await
+    let redacted = redact_card_numbers(&path)?;
+    let kept_path = redacted.path.display().to_string();
+    let statement = extractor
+        .extract(&redacted.path)
+        .await
+        .map_err(|error| format!("{error}\nThe redacted PDF was kept at: {kept_path}"))?;
+
+    Ok(PdfExtractionResult {
+        statement,
+        redacted_pdf_path: redacted.path,
+        redaction_count: redacted.redaction_count,
+        page_count: redacted.page_count,
+    })
 }
 
 fn database_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -140,6 +166,12 @@ fn delete_financial_item(app: tauri::AppHandle, id: i64, kind: String) -> Result
 }
 
 #[tauri::command]
+fn clear_all_finance_data(app: tauri::AppHandle) -> Result<(), String> {
+    let mut connection = open_app_database(&app)?;
+    database::clear_all_data(&mut connection)
+}
+
+#[tauri::command]
 fn save_statement(
     app: tauri::AppHandle,
     filename: String,
@@ -173,6 +205,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             extract_pdf_with_openai,
             add_financial_item,
+            clear_all_finance_data,
             delete_financial_item,
             get_assets_data,
             get_insurance_policies,

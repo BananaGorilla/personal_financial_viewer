@@ -302,6 +302,33 @@ pub fn delete_financial_item(
         .map_err(|error| format!("Could not delete financial item: {error}"))
 }
 
+/// Removes every piece of user-entered finance data while retaining the
+/// initialized schema and default asset-summary row required by the UI.
+pub fn clear_all_data(connection: &mut Connection) -> std::result::Result<(), String> {
+    let transaction = connection
+        .transaction()
+        .map_err(|error| format!("Could not start database reset: {error}"))?;
+
+    // Deleting accounts cascades to statement imports and their transactions.
+    transaction
+        .execute_batch(
+            "DELETE FROM accounts;
+             DELETE FROM financial_items;
+             DELETE FROM insurance_policies;
+             UPDATE asset_summary
+             SET savings_cents = 0,
+                 cpf_cents = 0,
+                 investments_cents = 0,
+                 annual_income_cents = 0
+             WHERE id = 1;",
+        )
+        .map_err(|error| format!("Could not clear finance data: {error}"))?;
+
+    transaction
+        .commit()
+        .map_err(|error| format!("Could not finish database reset: {error}"))
+}
+
 pub fn save_statement(
     connection: &mut Connection,
     filename: &str,
@@ -770,6 +797,51 @@ mod tests {
         );
         delete_insurance_policy(&connection, policy_id).unwrap();
         assert!(insurance_policies(&connection).unwrap().is_empty());
+    }
+
+    #[test]
+    fn clears_all_user_finance_data() {
+        let mut connection = memory_database();
+        save_asset_summary(&connection, 125_000, 350_000, 80_000, 850_000).unwrap();
+        add_financial_item(&connection, "loan", "Home mortgage", 9_500_000).unwrap();
+        add_insurance_policy(&connection, "Term life").unwrap();
+        save_statement(
+            &mut connection,
+            "august.pdf",
+            StatementToSave {
+                institution: Some("Development Test Bank".into()),
+                statement_month: Some("2026-08".into()),
+                transactions: vec![TransactionToSave {
+                    date: Some("2026-08-03".into()),
+                    description: "Groceries".into(),
+                    amount_cents: 3_290,
+                    category: Some("grocery".into()),
+                }],
+            },
+        )
+        .unwrap();
+
+        clear_all_data(&mut connection).unwrap();
+
+        assert_eq!(
+            assets_data(&connection).unwrap(),
+            AssetsData {
+                savings_cents: 0,
+                cpf_cents: 0,
+                investments_cents: 0,
+                annual_income_cents: 0,
+                loans: vec![],
+            }
+        );
+        assert!(insurance_policies(&connection).unwrap().is_empty());
+        for table in ["accounts", "statement_imports", "transactions"] {
+            let count: i64 = connection
+                .query_row(&format!("SELECT count(*) FROM {table}"), [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(count, 0, "{table} should be empty");
+        }
     }
 
     #[test]

@@ -396,6 +396,10 @@ export const dashboardTab: TabDefinition = {
       currentData = null;
       selectedCategories.clear();
     });
+    context.events.addEventListener("finance-data-cleared", () => {
+      currentData = null;
+      selectedCategories.clear();
+    });
     const resizeObserver = new ResizeObserver(() => {
       if (!currentData || content.hidden) return;
       renderMonthlyChart(currentData);
